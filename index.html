@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+        <title>Picture Puzzle Game</title>
+        <link rel="stylesheet" href="reset.css">
+        <style>
+            /* 基础样式 */
+            html {position: fixed;top: 0;bottom: 0;left: 0;right: 0;}
+            body {width: 100%;height: 100%;font-family: 'Arial', sans-serif;}
+            body {background-image: url('bg.jpg');background-repeat: no-repeat;background-position: center center;background-size: cover;}
+            
+            /* 通用样式 */
+            .title {
+                font-size: min(6vw, 6vh);
+                font-weight: 700;
+                padding-bottom: 2em;
+                text-align: center;
+                color: #fff;
+                text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                letter-spacing: 1px;
+            }
+            .scene {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                width: 100%;
+                align-items: center;
+                justify-content: center;
+                padding: 2vw;
+                box-sizing: border-box;
+            }
+            .box {
+                position: relative;
+                overflow: hidden;
+            }
+            .box::before {
+                content: '';
+                display: block;
+                position: absolute;
+                background-color: rgba(255, 255, 255, .9);
+                width: calc(100% - min(2vw, 2vh));
+                height: calc(100% - min(2vw, 2vh));
+                top: min(1vw, 1vh);
+                left: min(1vw, 1vh);
+                z-index: -1;
+                border-radius: 8px;
+            }
+            .box::after {
+                content: '';
+                display: block;
+                position: absolute;
+                background-color: rgba(0, 0, 0, .2);
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: -2;
+                border-radius: 12px;
+            }
+
+            /* 难度按钮 */
+            .level-btn {
+                font-size: min(4vw, 4vh);
+                padding: 1.2em 2.5em;
+                margin-bottom: 1.5em;
+                border-radius: 12px;
+                color: #333;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .level-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            }
+            .level-btn:active {
+                transform: translateY(0);
+            }
+
+            /* 拼图容器 */
+            .grid-box {
+                position: relative;
+                width: min(92vw, 92vh);
+                height: min(92vw, 92vh);
+                margin: 1em 0;
+            }
+            .grid-box::after {
+                border-radius: 16px;
+            }
+            .grid-box::before {
+                border-radius: 12px;
+            }
+            .grid {
+                position: absolute;
+                left: min(1vw, 1vh);
+                top: min(1vw, 1vh);
+                background-size: min(90vw, 90vh) min(90vw, 90vh);
+                background-repeat: no-repeat;
+                box-sizing: border-box;
+                border: 1px solid rgba(255,255,255,0.8);
+                transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+            .grid-9 {
+                width: min(30vw, 30vh);
+                height: min(30vw, 30vh);
+            }
+            .grid-16 {
+                width: min(22.5vw, 22.5vh);
+                height: min(22.5vw, 22.5vh);
+            }
+            .grid-25 {
+                width: min(18vw, 18vh);
+                height: min(18vw, 18vh);
+            }
+            .grid-8-9,
+            .grid-15-16,
+            .grid-24-25 {
+                border-color: transparent;
+            }
+
+            /* 步数统计 */
+            .step-info {
+                color: #fff;
+                background: linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4));
+                padding: 1em 1.5em;
+                margin-bottom: 1em;
+                border-radius: 8px;
+                font-size: 1.2em;
+                font-weight: 600;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .step-info::after {
+                content: ' STEP(S)';
+                font-weight: 400;
+                opacity: 0.8;
+                margin-left: 0.5em;
+            }
+            .step-block, .action-block {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .step-block {
+                justify-content: flex-end;
+            }
+
+            /* 操作按钮 */
+            .action-info {
+                margin-top: 1em;
+                display: flex;
+                flex-direction: row;
+                gap: 2vw;
+            }
+            .action-btn {
+                padding: 1em 2em;
+                border-radius: 8px;
+                text-align: center;
+                font-size: 1.1em;
+                font-weight: 600;
+                color: #333;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .action-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            }
+            .action-btn:active {
+                transform: translateY(0);
+            }
+
+            /* 加载进度 */
+            .pro {
+                margin-bottom: 1em;
+                font-weight: 700;
+                color: #fff;
+                text-shadow: 1px 1px 10px #000;
+                font-size: 1.5em;
+            }
+            .bar {
+                height: 1.2em;
+                width: 90vw;
+                transition: all .3s ease;
+                border-radius: 1em;
+                overflow: hidden;
+            }
+            .bar::before {
+                background-color: transparent;
+            }
+            .bar::after {
+                border-radius: 1em;
+            }
+            .bar.loaded::before {
+                background: linear-gradient(90deg, #4caf50, #8bc34a);
+                border-radius: 1em;
+                box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+            }
+
+            /* 图片选择区 */
+            .pics {
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 2em;
+                gap: 4vw;
+            }
+            .pics img {
+                width: min(34vw, 34vh);
+                height: min(34vw, 34vh);
+                object-fit: cover;
+            }
+            .prev-btn::before {
+                content: '';
+                display: block;
+                border-style: solid;
+                border-color: transparent rgba(255,255,255,0.8) transparent transparent;
+                border-width: 6vw 8vw;
+                opacity: 0.8;
+                transition: all 0.3s ease;
+            }
+            .prev-btn:active::before {
+                opacity: 1;
+                transform: translateX(-2px);
+            }
+            .next-btn::after {
+                content: '';
+                display: block;
+                border-style: solid;
+                border-color: transparent transparent transparent rgba(255,255,255,0.8);
+                border-width: 6vw 8vw;
+                opacity: 0.8;
+                transition: all 0.3s ease;
+            }
+            .next-btn:active::after {
+                opacity: 1;
+                transform: translateX(2px);
+            }
+        </style>
+    </head>
+    <body></body>
+    <script src="___index.js"></script>
+    <script src="game.js"></script>
+</html>
